@@ -1,4 +1,3 @@
-// vite.config.js
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 
@@ -9,4 +8,15 @@ export default defineConfig({
       refresh: true,
     }),
   ],
+  resolve: {
+    alias: {
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      buffer: 'buffer',
+      process: 'process/browser',
+    },
+  },
+  define: {
+    global: 'globalThis',
+  },
 });
