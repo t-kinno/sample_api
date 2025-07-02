@@ -1,26 +1,23 @@
-FROM node:16-slim as node-builder
-
-COPY . ./app
-RUN cd /app && npm ci && npm run prod
-
-
+# ベースイメージはPHP公式の最新安定版を使用
 FROM php:8.2-apache
 
-RUN apt-get update && apt-get install -y \
-  zip \
-  unzip \
-  git
-
-RUN docker-php-ext-install -j "$(nproc)" opcache && docker-php-ext-enable opcache
-
-RUN sed -i 's/80/8080/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
-RUN sed -i 's#/var/www/html#/var/www/html/public#g' /etc/apache2/sites-available/000-default.conf
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-
-COPY --from=composer:2.0 /usr/bin/composer /usr/bin/composer
-
+# 作業ディレクトリを設定
 WORKDIR /var/www/html
-COPY . ./
-COPY --from=node-builder /app/public ./public
-RUN composer install
-RUN chown -Rf www-data:www-data ./
+
+# Apacheのmod_rewriteを有効化（必要に応じて）
+RUN a2enmod rewrite
+
+# 必要なPHP拡張モジュールをインストール
+RUN docker-php-ext-install pdo_mysql
+
+# ローカルのPHPソースコードをコンテナにコピー
+COPY . /var/www/html
+
+# パーミッション設定（必要に応じて）
+RUN chown -R www-data:www-data /var/www/html
+
+# ポート80を公開
+EXPOSE 80
+
+# Apacheをフォアグラウンドで起動
+CMD ["apache2-foreground"]
